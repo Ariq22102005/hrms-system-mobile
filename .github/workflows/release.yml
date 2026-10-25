@@ -1,0 +1,106 @@
+name: Approved EAS release
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options: [android, ios]
+        default: android
+      profile:
+        type: choice
+        options: [development, preview, production]
+        default: preview
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validation:
+    uses: ./.github/workflows/ci.yml
+  internal:
+    if: github.event_name == 'workflow_dispatch' && inputs.profile != 'production'
+    needs: validation
+    runs-on: ubuntu-latest
+    environment: internal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 24.7.0
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive --wait --json > build.json
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          PROFILE: ${{ inputs.profile }}
+      - uses: actions/upload-artifact@v4
+        with: { name: eas-internal-result, path: build.json }
+  production:
+    if: (github.event_name == 'push' && !contains(github.ref_name, '-')) || inputs.profile == 'production'
+    needs: validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: production
+    permissions:
+      contents: write
+      actions: read
+    env:
+      ARTIFACT_NAME: PTI-${{ github.event_name == 'push' && github.ref_name || github.sha }}.apk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - name: Require configured production reviewers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/environments/production" > approval.json
+          node -e 'const e=require("./approval.json"); if(!e.protection_rules?.some(r=>r.type==="required_reviewers" && r.reviewers?.length)) throw Error("Configure required reviewers on production before releasing");'
+      - run: npm ci
+      - name: Validate tag and version
+        if: github.event_name == 'push'
+        run: node scripts/validate-release.cjs "$GITHUB_REF_NAME"
+      - name: Block unresolved high dependency advisories
+        run: npm audit --omit=dev --audit-level=high
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 24.7.0
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build Android AAB and release APK
+        if: github.event_name == 'push' || inputs.platform == 'android'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build --platform android --profile production --non-interactive --wait --json > android-aab.json
+          eas build --platform android --profile production-apk --non-interactive --wait --json > android-apk.json
+          node scripts/eas-artifact.cjs android-apk.json android production-apk "$ARTIFACT_NAME"
+      - name: Build iOS store IPA
+        if: github.event_name == 'push' || inputs.platform == 'ios'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform ios --profile production --non-interactive --wait --json > ios.json
+      - name: Submit the exact iOS build to TestFlight
+        if: (github.event_name == 'push' || inputs.platform == 'ios') && vars.ENABLE_TESTFLIGHT == 'true'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          BUILD_ID=$(node scripts/eas-artifact.cjs ios.json ios production --id)
+          eas submit --platform ios --profile production --id "$BUILD_ID" --non-interactive --wait
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-build-results
+          path: |
+            android-*.json
+            ios.json
+            PTI-*.apk
+      - name: Create draft GitHub Release for review
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$ARTIFACT_NAME" --verify-tag --draft --generate-notes --title "PTI $GITHUB_REF_NAME"

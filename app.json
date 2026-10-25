@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "PTI Attendance",
+    "slug": "AranusAttendanceApp",
+    "version": "1.0.0",
+    "primaryColor": "#8B0D1A",
+    "orientation": "portrait",
+    "icon": "./assets/pti-app-icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cliffhooper.AranusAttendanceApp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#8B0D1A",
+        "foregroundImage": "./assets/pti-android-foreground.png",
+        "monochromeImage": "./assets/pti-android-monochrome.png"
+      },
+      "package": "com.cliffhooper.AranusAttendanceApp",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "versionCode": 10001
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "./plugins/withCameraXPin",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Izinkan Perseverance Technology Indonesia menggunakan kamera untuk foto absensi dan pendaftaran wajah.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Izinkan Perseverance Technology Indonesia menggunakan kamera untuk foto absensi dan pendaftaran wajah.",
+          "enableMicrophonePermission": false
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Izinkan Perseverance Technology Indonesia menggunakan lokasi untuk memvalidasi area kantor."
+        }
+      ],
+      "expo-sharing",
+      "expo-system-ui",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/Perseverance Technology Logo.png",
+          "imageWidth": 280,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F2ED",
+          "dark": {
+            "backgroundColor": "#F5F2ED"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b6bc63bf-0607-4fe2-9091-1481f8f13d7e"
+      }
+    },
+    "owner": "ariqwlz"
+  }
+}

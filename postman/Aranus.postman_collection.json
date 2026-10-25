@@ -1,0 +1,419 @@
+{
+    "info":  {
+                 "name":  "PTI v1 - API client QA",
+                 "description":  "Development/staging only. Set credentials locally. Capture and verification policy require a real backend; fixture attendance stays pending.",
+                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+             },
+    "auth":  {
+                 "bearer":  [
+                                {
+                                    "key":  "token",
+                                    "type":  "string",
+                                    "value":  "{{token}}"
+                                }
+                            ],
+                 "type":  "bearer"
+             },
+    "item":  [
+                 {
+                     "request":  {
+                                     "method":  "POST",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Content-Type",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/auth/login",
+                                     "body":  {
+                                                  "raw":  "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}",
+                                                  "options":  {
+                                                                  "raw":  {
+                                                                              "language":  "json"
+                                                                          }
+                                                              },
+                                                  "mode":  "raw"
+                                              },
+                                     "auth":  {
+                                                  "type":  "noauth"
+                                              }
+                                 },
+                     "name":  "Login",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });",
+                                                                   "if (json.success \u0026\u0026 typeof json.data?.token === \"string\") pm.environment.set(\"token\", json.data.token);"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/employee"
+                                 },
+                     "name":  "Employee",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/dashboard"
+                                 },
+                     "name":  "Dashboard",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "POST",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Content-Type",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/attendance/challenge",
+                                     "body":  {
+                                                  "raw":  "{}",
+                                                  "options":  {
+                                                                  "raw":  {
+                                                                              "language":  "json"
+                                                                          }
+                                                              },
+                                                  "mode":  "raw"
+                                              }
+                                 },
+                     "name":  "Attendance challenge",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });",
+                                                                   "if (json.success) pm.environment.set(\"challenge_id\", json.data.id);"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "POST",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Content-Type",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Idempotency-Key",
+                                                        "value":  "{{attendance_key}}"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/attendance",
+                                     "body":  {
+                                                  "raw":  "{\"type\":\"check-in\",\"challenge_id\":\"{{challenge_id}}\",\"location_samples\":{{location_samples}},\"photo_base64\":\"{{front_photo_base64}}\",\"captured_at\":\"{{captured_at}}\"}",
+                                                  "options":  {
+                                                                  "raw":  {
+                                                                              "language":  "json"
+                                                                          }
+                                                              },
+                                                  "mode":  "raw"
+                                              }
+                                 },
+                     "name":  "Attendance POST - real capture required",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });",
+                                                                   "if (json.success) pm.environment.set(\"attendance_id\", String(json.data.id));"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   },
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const variable = \"attendance_key\"; if (!pm.environment.get(variable)) pm.environment.set(variable, pm.variables.replaceIn(\"{{$guid}}\"));"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "prerequest"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/attendance"
+                                 },
+                     "name":  "Attendance GET - confirm saved ID",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });",
+                                                                   "const saved = pm.environment.get(\"attendance_id\"); if (saved \u0026\u0026 json.success) pm.test(\"POST ID retrievable by GET\", () =\u003e pm.expect(json.data.some(row =\u003e String(row.id) === saved)).to.equal(true));"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "POST",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Content-Type",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Idempotency-Key",
+                                                        "value":  "{{leave_key}}"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/leave-requests",
+                                     "body":  {
+                                                  "raw":  "{\"leave_type\":\"annual\",\"start_date\":\"{{start_date}}\",\"end_date\":\"{{end_date}}\",\"reason\":\"Postman staging QA\"}",
+                                                  "options":  {
+                                                                  "raw":  {
+                                                                              "language":  "json"
+                                                                          }
+                                                              },
+                                                  "mode":  "raw"
+                                              }
+                                 },
+                     "name":  "Leave POST",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });",
+                                                                   "if (json.success) pm.environment.set(\"leave_id\", String(json.data.id));"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   },
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const variable = \"leave_key\"; if (!pm.environment.get(variable)) pm.environment.set(variable, pm.variables.replaceIn(\"{{$guid}}\"));"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "prerequest"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/leave-requests"
+                                 },
+                     "name":  "Leave GET - confirm saved ID",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });",
+                                                                   "const saved = pm.environment.get(\"leave_id\"); if (saved \u0026\u0026 json.success) pm.test(\"POST ID retrievable by GET\", () =\u003e pm.expect(json.data.some(row =\u003e String(row.id) === saved)).to.equal(true));"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/overtime"
+                                 },
+                     "name":  "Overtime",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/payroll"
+                                 },
+                     "name":  "Payroll",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/files"
+                                 },
+                     "name":  "Files - backend required",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "POST",
+                                     "header":  [
+                                                    {
+                                                        "key":  "Accept",
+                                                        "value":  "application/json"
+                                                    },
+                                                    {
+                                                        "key":  "Content-Type",
+                                                        "value":  "application/json"
+                                                    }
+                                                ],
+                                     "url":  "{{baseUrl}}/api/v1/auth/logout",
+                                     "body":  {
+                                                  "raw":  "{}",
+                                                  "options":  {
+                                                                  "raw":  {
+                                                                              "language":  "json"
+                                                                          }
+                                                              },
+                                                  "mode":  "raw"
+                                              }
+                                 },
+                     "name":  "Logout",
+                     "event":  [
+                                   {
+                                       "script":  {
+                                                      "exec":  [
+                                                                   "const json = pm.response.json();",
+                                                                   "pm.test(\"Envelope JSON valid\", () =\u003e { pm.expect(json.success).to.be.a(\"boolean\"); pm.expect(json.message).to.be.a(\"string\"); });"
+                                                               ],
+                                                      "type":  "text/javascript"
+                                                  },
+                                       "listen":  "test"
+                                   }
+                               ]
+                 }
+             ]
+}
